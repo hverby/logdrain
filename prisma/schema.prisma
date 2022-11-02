@@ -26,5 +26,5 @@ model Beacon {
   beacon Json
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-  @@map("sendbeacons")
+  @@map("beacons")
 }

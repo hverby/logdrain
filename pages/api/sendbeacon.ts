@@ -10,8 +10,7 @@ export default async function handler(
     if(req.method == 'POST'){
         if (
             req.body &&
-            typeof req.body === 'object' &&
-            !Array.isArray(req.body)
+            typeof req.body === 'object'
         ){
             const beacon = await storeBeacon(req.body);
             res.status(201)
