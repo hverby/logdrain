@@ -1,0 +1,31 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+datasource db {
+  provider = "mongodb"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+  previewFeatures = ["mongoDb"]
+}
+
+enum Type {
+  JSON
+  NDJSON
+  SYSLOG
+}
+model Log {
+  id String @id @default(auto()) @map("_id") @db.ObjectId
+  log Json
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  @@map("logs")
+}
+model VerificationToken {
+  id String @id @default(auto()) @map("_id") @db.ObjectId
+  token      String   @unique
+  expires    DateTime
+  @@unique([id, token])
+  @@map("verificationtokens")
+}
