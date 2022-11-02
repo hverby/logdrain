@@ -3,6 +3,7 @@ import type { NextApiRequest, NextApiResponse } from 'next'
 import {retrieveLogs} from "../../prisma/logdrain";
 import { PutObjectCommand, CreateBucketCommand } from "@aws-sdk/client-s3";
 import {s3Client} from "../../lib/s3Client";
+import { Prisma } from '@prisma/client';
 
 export default async function handler(
     req: NextApiRequest,
@@ -15,10 +16,20 @@ export default async function handler(
         Body: "BODY", // The content of the object. For example, 'Hello world!".
     };
 
-    if(req.method == 'GET'){
-        const { length, env } = req.query;
-       const result = await retrieveLogs(1);
+    if (req.method == 'GET') {
+        const {length, env} = req.query;
+        const result = await retrieveLogs(1);
+        let finalResult: Prisma.JsonObject[] = [];
+        result.forEach((l) => {
+            if (
+                l.log &&
+                typeof l.log === 'object' &&
+                !Array.isArray(l.log)
+            ){
+                finalResult.push(l.log);
+            }
+        })
         res.status(201)
-            .json({result});
+            .json({result: result});
     }
 }
