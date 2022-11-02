@@ -5,9 +5,9 @@ const s3Client = new S3Client({
     region: process.env.REGION,
     credentials: {
         // @ts-ignore
-        accessKeyId: process.env.ACCESS_KEY,
+        accessKeyId: process.env.S3_KEY,
         // @ts-ignore
-        secretAccessKey: process.env.SECRET_KEY,
+        secretAccessKey: process.env.S3_SECRET,
     },
 });
 export { s3Client };

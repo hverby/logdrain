@@ -9,15 +9,24 @@ export const storeLog = async (logEntry: any) => {
     })
 }
 
-export const retrieveLogs = async (batchLength: number) => {
-    const date: Date = formatDate();
-    //const maxDate: Date = new Date(date.getFullYear(), date.getMonth(), date.getDate(), date.getHours());
-    const minDate: Date = formatDate();
+export const retrieveLogs = async (batchLength: number, minDate: Date, date: Date) => {
     minDate.setDate(date.getDate() - batchLength);
     console.log(date);
     console.log(minDate);
 
     return await prisma.log.findMany({
+        where: {
+            createdAt: {
+                lt: date,
+                gte: minDate
+            },
+        }
+    });
+}
+
+export const deleteLogs = async (batchLength: number, minDate: Date, date: Date) => {
+    minDate.setDate(date.getDate() - batchLength);
+    return await prisma.log.deleteMany({
         where: {
             createdAt: {
                 lt: date,
