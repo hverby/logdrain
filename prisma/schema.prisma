@@ -21,10 +21,10 @@ model Log {
   updatedAt DateTime @updatedAt
   @@map("logs")
 }
-model VerificationToken {
+model Beacon {
   id String @id @default(auto()) @map("_id") @db.ObjectId
-  token      String   @unique
-  expires    DateTime
-  @@unique([id, token])
-  @@map("verificationtokens")
+  beacon Json
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  @@map("sendbeacons")
 }

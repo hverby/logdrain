@@ -1,5 +1,4 @@
 import prisma from "../lib/prisma";
-import {formatDate} from "../lib/utils";
 
 export const storeLog = async (logEntry: any) => {
     return await prisma.log.create({
@@ -9,12 +8,29 @@ export const storeLog = async (logEntry: any) => {
     })
 }
 
+export const storeBeacon = async (beaconEntry: any) => {
+    return await prisma.beacon.create({
+        data: {
+            "beacon": beaconEntry
+        }
+    })
+}
+
 export const retrieveLogs = async (batchLength: number, minDate: Date, date: Date) => {
     minDate.setDate(date.getDate() - batchLength);
-    console.log(date);
-    console.log(minDate);
-
     return await prisma.log.findMany({
+        where: {
+            createdAt: {
+                lt: date,
+                gte: minDate
+            },
+        }
+    });
+}
+
+export const retrieveBeacons = async (batchLength: number, minDate: Date, date: Date) => {
+    minDate.setDate(date.getDate() - batchLength);
+    return await prisma.beacon.findMany({
         where: {
             createdAt: {
                 lt: date,
@@ -27,6 +43,18 @@ export const retrieveLogs = async (batchLength: number, minDate: Date, date: Dat
 export const deleteLogs = async (batchLength: number, minDate: Date, date: Date) => {
     minDate.setDate(date.getDate() - batchLength);
     return await prisma.log.deleteMany({
+        where: {
+            createdAt: {
+                lt: date,
+                gte: minDate
+            },
+        }
+    });
+}
+
+export const deleteBeacons = async (batchLength: number, minDate: Date, date: Date) => {
+    minDate.setDate(date.getDate() - batchLength);
+    return await prisma.beacon.deleteMany({
         where: {
             createdAt: {
                 lt: date,

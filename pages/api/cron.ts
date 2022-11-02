@@ -1,6 +1,6 @@
 // Next.js API route support: https://nextjs.org/docs/api-routes/introduction
 import type { NextApiRequest, NextApiResponse } from 'next'
-import {deleteLogs, retrieveLogs} from "../../prisma/logdrain";
+import {deleteBeacons, deleteLogs, retrieveBeacons, retrieveLogs} from "../../prisma/logdrain";
 import { PutObjectCommand, CreateBucketCommand } from "@aws-sdk/client-s3";
 import {s3Client} from "../../lib/s3Client";
 import { Prisma } from '@prisma/client';
@@ -12,6 +12,14 @@ export default async function handler(
 ) {
     if (req.method == 'GET') {
         const {length, deleteAfter} = req.query; // Get length of the batch and if we may delete all the records after migration to s3. For example, 1 for one day.
+        let responseObj = {
+            S3LogUpload: "",
+            S3BeaconUpload: "",
+            DeleteLogs: "",
+            DeleteBeacons: "",
+            RetrieveLogs: "",
+            RetrieveBeacons: ""
+        };
         const date: Date = formatDate();
         const minDate: Date = formatDate();
         const result = await retrieveLogs(Number(length), minDate, date); // Get all logs for the same day.
@@ -34,43 +42,82 @@ export default async function handler(
         try {
             // for each of our sources recorded
             if((Array.from(s3Map.keys())).length > 0){
-                // @ts-ignore
-                for (const source of s3Map.keys()) {
-                    // we create a s3 file to upload
-                    await s3Client.send(new PutObjectCommand({
-                        Bucket: process.env.S3_BUCKET, // The name of the bucket. For example, 'sample_bucket_101'.
-                        Key: `${source}-${formatDateString(date)}.txt`, // The name of the object. For example, 'sample_upload.txt'.
-                        Body: JSON.stringify(s3Map.get(source)), // The content of the object. For example, 'Hello world!".
-                    }));
-                    /*console.log(
-                        "Successfully created " +
-                        `${source}-${formatDateString(date)}.txt` +
-                        " and uploaded it to " +
-                        process.env.S3_BUCKET
-                    );*/
-                }
-                //Just for test purpose
-                //If we don't delete all the logs migrated to s3 from our DB.
-                if(deleteAfter == "true"){
-                    try{
-                        await deleteLogs(Number(length), minDate, date);
-                        res.status(201)
-                            .json({result: 'Success!'});
-                    } catch (err){
-                        res.status(500)
-                            .json({error: err});
+                try {
+                    // @ts-ignore
+                    for (const source of s3Map.keys()) {
+                        // we create a s3 file to upload
+                        await s3Client.send(new PutObjectCommand({
+                            Bucket: process.env.S3_BUCKET, // The name of the bucket. For example, 'sample_bucket_101'.
+                            Key: `${source}-${formatDateString(date)}.txt`, // The name of the object. For example, 'sample_upload.txt'.
+                            Body: JSON.stringify(s3Map.get(source)), // The content of the object. For example, 'Hello world!".
+                        }));
+                        /*console.log(
+                            "Successfully created " +
+                            `${source}-${formatDateString(date)}.txt` +
+                            " and uploaded it to " +
+                            process.env.S3_BUCKET
+                        );*/
                     }
-                }else{
-                    res.status(201)
-                        .json({result: 'Success without deletion!'});
+                    responseObj.S3LogUpload = "Upload success!";
+                    if(deleteAfter == "true"){
+                        try{
+                            await deleteLogs(Number(length), minDate, date);
+                            responseObj.DeleteLogs = "Deletion success!";
+                        } catch (err){
+                            responseObj.DeleteLogs = `${err}`;
+                        }
+                    }else{
+                        responseObj.DeleteLogs = "Not required!";
+                    }
+                } catch (err) {
+                    responseObj.S3LogUpload = `${err}`;
                 }
             }else{
-                res.status(201)
-                    .json({result: 'Nothing to upload!'});
+                responseObj.S3LogUpload =  "Nothing to upload!";
             }
+
+            //Uploads the beacons
+            try {
+                const result = await retrieveBeacons(Number(length), minDate, date);
+                responseObj.RetrieveBeacons =  "Retrieve success!";
+                if(result.length > 0){
+                    try {
+                        // we create a s3 file to upload
+                        await s3Client.send(new PutObjectCommand({
+                            Bucket: process.env.S3_BUCKET, // The name of the bucket. For example, 'sample_bucket_101'.
+                            Key: `client-${formatDateString(date)}.txt`, // The name of the object. For example, 'sample_upload.txt'.
+                            Body: JSON.stringify(result), // The content of the object. For example, 'Hello world!".
+                        }));
+
+                        responseObj.S3BeaconUpload =  "Upload success!";
+                        //If we plan to delete all the beacons migrated to s3 from our DB.
+                        if(deleteAfter == "true"){
+                            try{
+                                await deleteBeacons(Number(length), minDate, date);
+                                responseObj.DeleteBeacons =  "Deletion success!";
+                            } catch (err){
+                                responseObj.DeleteBeacons =  `${err}`;
+                            }
+                        }else{
+                            responseObj.DeleteBeacons =  "Not required!";
+                        }
+                    } catch (err) {
+                        responseObj.S3BeaconUpload =  `${err}`;
+                    }
+                }else{
+                    responseObj.S3BeaconUpload =   "Nothing to upload!"
+                }
+            }catch (err){
+                responseObj.RetrieveBeacons =  `${err}`;
+            }
+
+
+
+            res.status(201)
+                .json(responseObj);
         } catch (err) {
             res.status(500)
-                .json({error: err});
+                .json(responseObj);
         }
     }
 }
