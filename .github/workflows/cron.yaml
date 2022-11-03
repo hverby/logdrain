@@ -1,0 +1,13 @@
+name: daily-cron
+on:
+  schedule:
+    - cron: '0 1 * * *'
+jobs:
+  cron:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Call our API route
+        run: |
+          curl --request POST \
+          --url 'http://localhost:3000/api/cron?length=1&deleteAfter=false' \
+          --header 'Authorization: Bearer ${{ secrets.API_SECRET_KEY }}'
