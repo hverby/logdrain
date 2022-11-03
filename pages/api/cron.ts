@@ -11,10 +11,12 @@ export default async function handler(
     res: NextApiResponse
 ) {
     if (req.method == 'POST') {
-        let {length, deleteAfter} = req.body; // Get length of the batch and if we may delete all the records after migration to s3. For example, 1 for one day.
+        let {batchLength, deleteAfter} = req.body; // Get length of the batch and if we may delete all the records after migration to s3. For example, 1 for one day.
         const { authorization } = req.headers;
-        if(!length || length.length == 0) length = "1";
-        if(!deleteAfter) deleteAfter = "true";
+        if(!batchLength || batchLength <= 0) batchLength = 1;
+        if(!deleteAfter) deleteAfter = true;
+        console.log(deleteAfter);
+        console.log(batchLength);
         if(authorization === `Bearer ${process.env.API_SECRET_KEY}`){
             let responseObj = {
                 S3LogUpload: "",
@@ -26,7 +28,7 @@ export default async function handler(
             };
             const date: Date = formatDate();
             const minDate: Date = formatDate();
-            const result = await retrieveLogs(Number(length), minDate, date); // Get all logs for the same day.
+            const result = await retrieveLogs(Number(batchLength), minDate, date); // Get all logs for the same day.
             let s3Map = new Map<String, Prisma.JsonObject[]>(); // create an amp for our different arrays of log.
             sources.forEach((source) => {
                 const tmpArr: Prisma.JsonObject[] = [];
@@ -63,7 +65,7 @@ export default async function handler(
                             );*/
                         }
                         responseObj.S3LogUpload = "Upload success!";
-                        if(deleteAfter == "true"){
+                        if(deleteAfter){
                             try{
                                 await deleteLogs(Number(length), minDate, date);
                                 responseObj.DeleteLogs = "Deletion success!";
@@ -82,7 +84,7 @@ export default async function handler(
 
                 //Uploads the beacons
                 try {
-                    const result = await retrieveBeacons(Number(length), minDate, date);
+                    const result = await retrieveBeacons(Number(batchLength), minDate, date);
                     responseObj.RetrieveBeacons =  "Retrieve success!";
                     if(result.length > 0){
                         try {
@@ -95,7 +97,7 @@ export default async function handler(
 
                             responseObj.S3BeaconUpload =  "Upload success!";
                             //If we plan to delete all the beacons migrated to s3 from our DB.
-                            if(deleteAfter == "true"){
+                            if(deleteAfter){
                                 try{
                                     await deleteBeacons(Number(length), minDate, date);
                                     responseObj.DeleteBeacons =  "Deletion success!";
