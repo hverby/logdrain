@@ -5,30 +5,37 @@ This is a [Next.js](https://nextjs.org/) project bootstrapped with [`create-next
 First, run the development server:
 
 ```bash
+npm i
 npm run dev
-# or
-yarn dev
 ```
+## Set environement variables
+
+- DATABASE_URL=''
+- API_SECRET_KEY=''
+- S3_KEY=''
+- S3_SECRET=''
+- S3_BUCKET=''
+- REGION=''
 
 Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
-You can start editing the page by modifying `pages/index.tsx`. The page auto-updates as you edit the file.
+## How it works
 
-[API routes](https://nextjs.org/docs/api-routes/introduction) can be accessed on [http://localhost:3000/api/hello](http://localhost:3000/api/hello). This endpoint can be edited in `pages/api/hello.ts`.
+This is Logdrain app (api):
 
-The `pages/api` directory is mapped to `/api/*`. Files in this directory are treated as [API routes](https://nextjs.org/docs/api-routes/introduction) instead of React pages.
+- Url to receive messages from navigator.sendBeacon : https://{host}/api/sendbeacon
 
-## Learn More
+- Url to receive the logs : (POST) https://{host}/api/logdrain.
 
-To learn more about Next.js, take a look at the following resources:
+- Url to ulpoad the logs to S3 : (POST) https://{host}/api/cron.
+  - This url is called by an cron job each day, 60 seconds after midnight GMT.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js/) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/deployment) for more details.
+  This url must be call with:
+   {
+    "batchLength": 1,
+    "deleteAfter": true
+   }
+   
+ - batchLength: For the length of the batch, can be 1 for one day or 2, 3 ... If we want to retrieve previous day's logs.
+ - deleteAfter: Set to true if you want to delete the logs after migration to S3.
+ - Default values are set to 1 for batchLength and true for deleteAfter.
