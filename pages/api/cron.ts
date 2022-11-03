@@ -29,6 +29,7 @@ export default async function handler(
             const date: Date = formatDate();
             const minDate: Date = formatDate();
             const result = await retrieveLogs(Number(batchLength), minDate, date); // Get all logs for the same day.
+            responseObj.RetrieveLogs =  "Retrieve success!";
             let s3Map = new Map<String, Prisma.JsonObject[]>(); // create an amp for our different arrays of log.
             sources.forEach((source) => {
                 const tmpArr: Prisma.JsonObject[] = [];
