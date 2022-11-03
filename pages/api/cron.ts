@@ -57,17 +57,11 @@ export default async function handler(
                                 Key: `${source}-${formatDateString(date)}.txt`, // The name of the object. For example, 'sample_upload.txt'.
                                 Body: JSON.stringify(s3Map.get(source)), // The content of the object. For example, 'Hello world!".
                             }));
-                            /*console.log(
-                                "Successfully created " +
-                                `${source}-${formatDateString(date)}.txt` +
-                                " and uploaded it to " +
-                                process.env.S3_BUCKET
-                            );*/
                         }
                         responseObj.S3LogUpload = "Upload success!";
                         if(deleteAfter){
                             try{
-                                await deleteLogs(Number(length), minDate, date);
+                                await deleteLogs(Number(batchLength), minDate, date);
                                 responseObj.DeleteLogs = "Deletion success!";
                             } catch (err){
                                 responseObj.DeleteLogs = `${err}`;
@@ -99,7 +93,7 @@ export default async function handler(
                             //If we plan to delete all the beacons migrated to s3 from our DB.
                             if(deleteAfter){
                                 try{
-                                    await deleteBeacons(Number(length), minDate, date);
+                                    await deleteBeacons(Number(batchLength), minDate, date);
                                     responseObj.DeleteBeacons =  "Deletion success!";
                                 } catch (err){
                                     responseObj.DeleteBeacons =  `${err}`;
@@ -116,9 +110,6 @@ export default async function handler(
                 }catch (err){
                     responseObj.RetrieveBeacons =  `${err}`;
                 }
-
-
-
                 res.status(201)
                     .json(responseObj);
             } catch (err) {
