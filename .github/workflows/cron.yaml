@@ -8,6 +8,7 @@ jobs:
     steps:
       - name: Call our API route
         run: |
-          curl --request POST \
-          --url 'http://localhost:3000/api/cron?length=1&deleteAfter=false' \
-          --header 'Authorization: Bearer ${{ secrets.API_SECRET_KEY }}'
+          curl -X POST -H "Content-Type: application/json" \
+          -d '{"batchLength": 1, "deleteAfter": false}' \
+          -H 'Authorization: Bearer ${{ secrets.API_SECRET_KEY }}' \
+          https://logdrain-app.vercel.app/api/cron
